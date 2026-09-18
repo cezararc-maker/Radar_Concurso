@@ -46,6 +46,7 @@ class Concurso(Base):
 
     cargos: Mapped[list["Cargo"]] = relationship(back_populates="concurso", cascade="all, delete-orphan")
     publicacoes: Mapped[list["Publicacao"]] = relationship(back_populates="concurso", cascade="all, delete-orphan")
+    acompanhamento: Mapped["Acompanhamento | None"] = relationship(back_populates="concurso", uselist=False, cascade="all, delete-orphan")
 
 
 class Cargo(Base):
@@ -85,6 +86,23 @@ class Publicacao(Base):
     tipo: Mapped[str | None] = mapped_column(String(80))
 
     concurso: Mapped["Concurso | None"] = relationship(back_populates="publicacoes")
+
+
+class Acompanhamento(Base):
+    __tablename__ = "acompanhamentos"
+    __table_args__ = (UniqueConstraint("concurso_id", name="uq_acompanhamento_concurso"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    concurso_id: Mapped[int] = mapped_column(ForeignKey("concursos.id"), nullable=False)
+    ativo: Mapped[bool] = mapped_column(nullable=False, default=True)
+    notificar_novas_publicacoes: Mapped[bool] = mapped_column(nullable=False, default=True)
+    notificar_alteracoes_edital: Mapped[bool] = mapped_column(nullable=False, default=True)
+    notificar_prazos: Mapped[bool] = mapped_column(nullable=False, default=True)
+    notificar_resultados: Mapped[bool] = mapped_column(nullable=False, default=True)
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    atualizado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    concurso: Mapped["Concurso"] = relationship(back_populates="acompanhamento")
 
 
 def create_database_engine(database_url: str):
