@@ -7,12 +7,14 @@
       "scope": "estadual",
       "state": "MS",
       "organization": "Imprensa Oficial de Mato Grosso do Sul",
-      "url": "https://www.imprensaoficial.ms.gov.br/",
+      "url": "https://www.diariooficial.ms.gov.br/",
       "enabled": true,
       "priority": 1,
       "transport": "http",
       "parser": "ms_official_diary",
-      "notes": "Fonte oficial estadual. O parser deve respeitar a estrutura vigente do portal e dos PDFs oficiais."
+      "notes": "Fonte oficial estadual. O parser deve respeitar a estrutura vigente do portal e dos PDFs oficiais.",
+      "discovery_url": "https://www.diariooficial.ms.gov.br/",
+      "pdf_base_url": "https://assets.imprensaoficial.ms.gov.br/public/prd/Diario%20Oficial/"
     },
     {
       "id": "diogrande-cg",
