@@ -1,6 +1,6 @@
 """SQLAlchemy models used by Radar Concurso."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy import Date, DateTime, Integer, Numeric, String, Text, UniqueConstraint, create_engine
@@ -27,7 +27,9 @@ class Concurso(Base):
     cidade: Mapped[str | None] = mapped_column(String(150))
     uf: Mapped[str | None] = mapped_column(String(2))
     data_publicacao: Mapped[date | None] = mapped_column(Date)
-    data_coleta: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    data_coleta: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
     descricao: Mapped[str | None] = mapped_column(Text)
     fonte: Mapped[str | None] = mapped_column(String(255))
     url: Mapped[str | None] = mapped_column(Text)
@@ -60,7 +62,9 @@ class Publicacao(Base):
     fonte: Mapped[str | None] = mapped_column(String(255))
     url: Mapped[str | None] = mapped_column(Text)
     data_publicacao: Mapped[date | None] = mapped_column(Date)
-    data_coleta: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    data_coleta: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
     hash_conteudo: Mapped[str | None] = mapped_column(String(128))
     tipo: Mapped[str | None] = mapped_column(String(80))
 
