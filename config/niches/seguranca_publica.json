@@ -1,0 +1,10 @@
+{
+  "id": "seguranca_publica",
+  "nome": "Segurança Pública",
+  "ativo": false,
+  "subnichos": [
+    {"id": "policia_militar", "nome": "Polícia Militar", "ativo": false, "palavras_chave": ["polícia militar", "pm", "soldado", "oficial"]},
+    {"id": "policia_civil", "nome": "Polícia Civil", "ativo": false, "palavras_chave": ["polícia civil", "investigador", "escrivão", "delegado"]},
+    {"id": "prf", "nome": "Polícia Rodoviária Federal", "ativo": false, "palavras_chave": ["polícia rodoviária federal", "prf", "policial rodoviário federal"]}
+  ]
+}
