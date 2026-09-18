@@ -35,9 +35,12 @@ class TestDatabase(unittest.TestCase):
                 self.assertEqual(saved.salario_maximo, 8000)
 
             engine = session_factory.kw["bind"]
-            tables = inspect(engine).get_table_names()
-            self.assertIn("concursos", tables)
-            self.assertIn("publicacoes", tables)
+            try:
+                tables = inspect(engine).get_table_names()
+                self.assertIn("concursos", tables)
+                self.assertIn("publicacoes", tables)
+            finally:
+                engine.dispose()
 
 
 if __name__ == "__main__":
