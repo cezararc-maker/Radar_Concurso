@@ -38,6 +38,7 @@ class _EditionLinkParser(HTMLParser):
         self._row_text: list[str] = []
         self._current_href: str | None = None
         self._current_text: list[str] = []
+        self._pending_links: list[tuple[str, str]] = []
         self.links: list[tuple[str, str, str]] = []
 
     def handle_starttag(
@@ -50,6 +51,7 @@ class _EditionLinkParser(HTMLParser):
             self._row_text = []
             self._current_href = None
             self._current_text = []
+            self._pending_links = []
             return
 
         if tag != "a" or not self._in_row:
@@ -71,14 +73,18 @@ class _EditionLinkParser(HTMLParser):
 
         if tag == "a" and self._current_href is not None:
             title = " ".join(" ".join(self._current_text).split())
-            self.links.append((title, self._current_href, " ".join(self._row_text)))
+            self._pending_links.append((title, self._current_href))
             self._current_href = None
             self._current_text = []
             return
 
         if tag == "tr" and self._in_row:
+            context = " ".join(self._row_text)
+            for title, href in self._pending_links:
+                self.links.append((title, href, context))
             self._in_row = False
             self._row_text = []
+            self._pending_links = []
 
 
 class DoeMsCollector(HttpCollector):
