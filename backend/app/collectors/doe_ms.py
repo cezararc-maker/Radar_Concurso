@@ -30,31 +30,55 @@ class DoeMsEdition:
 
 
 class _EditionLinkParser(HTMLParser):
+    """Collect PDF links together with nearby row/container text."""
+
     def __init__(self) -> None:
         super().__init__()
         self._current_href: str | None = None
         self._current_text: list[str] = []
-        self.links: list[tuple[str, str]] = []
+        self._current_context: list[str] = []
+        self._row_depth = 0
+        self._row_text: list[str] = []
+        self.links: list[tuple[str, str, str]] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag.lower() != "a":
+        tag = tag.lower()
+        if tag == "tr":
+            self._row_depth = 1
+            self._row_text = []
+            return
+        if self._row_depth:
+            self._row_depth += 1
+
+        if tag != "a":
             return
         href = dict(attrs).get("href")
         if href:
             self._current_href = href
             self._current_text = []
+            self._current_context = list(self._row_text)
 
     def handle_data(self, data: str) -> None:
+        if self._row_depth:
+            self._row_text.append(data)
         if self._current_href is not None:
             self._current_text.append(data)
 
     def handle_endtag(self, tag: str) -> None:
-        if tag.lower() != "a" or self._current_href is None:
-            return
-        text = " ".join(" ".join(self._current_text).split())
-        self.links.append((text, self._current_href))
-        self._current_href = None
-        self._current_text = []
+        tag = tag.lower()
+
+        if tag == "a" and self._current_href is not None:
+            title = " ".join(" ".join(self._current_text).split())
+            context = " ".join(" ".join(self._row_text).split())
+            self.links.append((title, self._current_href, context))
+            self._current_href = None
+            self._current_text = []
+            self._current_context = []
+
+        if self._row_depth:
+            self._row_depth -= 1
+            if tag == "tr" and self._row_depth == 0:
+                self._row_text = []
 
 
 class DoeMsCollector(HttpCollector):
@@ -80,9 +104,9 @@ class DoeMsCollector(HttpCollector):
         parser.feed(html)
         editions: list[DoeMsEdition] = []
 
-        for title, href in parser.links:
-            match_issue = _ISSUE_RE.search(title)
-            match_date = _DATE_RE.search(title)
+        for title, href, context in parser.links:
+            match_issue = _ISSUE_RE.search(title) or _ISSUE_RE.search(context)
+            match_date = _DATE_RE.search(title) or _DATE_RE.search(context)
             if not match_issue or not match_date or not href.lower().endswith(".pdf"):
                 continue
 
@@ -90,9 +114,9 @@ class DoeMsCollector(HttpCollector):
             edition = DoeMsEdition(
                 issue_number=int(match_issue.group(1)),
                 publication_date=date(year, month, day),
-                title=title,
+                title=title or context,
                 pdf_url=urljoin(base_url, href),
-                supplement=("suplement" in title.lower() or "extra" in title.lower()),
+                supplement=("suplement" in (title + " " + context).lower() or "extra" in (title + " " + context).lower()),
             )
             editions.append(edition)
 
