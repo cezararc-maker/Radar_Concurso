@@ -1,0 +1,12 @@
+{
+  "id": "saude",
+  "nome": "Saúde",
+  "ativo": false,
+  "subnichos": [
+    {"id": "enfermagem", "nome": "Enfermagem", "ativo": false, "palavras_chave": ["enfermeiro", "enfermagem"]},
+    {"id": "tecnico_enfermagem", "nome": "Técnico em Enfermagem", "ativo": false, "palavras_chave": ["técnico em enfermagem", "técnico de enfermagem"]},
+    {"id": "medicina", "nome": "Medicina", "ativo": false, "palavras_chave": ["médico", "medicina"]},
+    {"id": "radiologia", "nome": "Radiologia", "ativo": false, "palavras_chave": ["radiologista", "técnico em radiologia", "radiologia"]},
+    {"id": "fisioterapia", "nome": "Fisioterapia", "ativo": false, "palavras_chave": ["fisioterapeuta", "fisioterapia"]}
+  ]
+}
