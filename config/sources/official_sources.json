@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "doe-ms",
+      "name": "Diário Oficial de Mato Grosso do Sul",
+      "scope": "estadual",
+      "state": "MS",
+      "organization": "Imprensa Oficial de Mato Grosso do Sul",
+      "url": "https://www.imprensaoficial.ms.gov.br/",
+      "enabled": true,
+      "priority": 1,
+      "transport": "http",
+      "parser": "ms_official_diary",
+      "notes": "Fonte oficial estadual. O parser deve respeitar a estrutura vigente do portal e dos PDFs oficiais."
+    },
+    {
+      "id": "diogrande-cg",
+      "name": "Diário Oficial de Campo Grande",
+      "scope": "municipal",
+      "state": "MS",
+      "city": "Campo Grande",
+      "organization": "Prefeitura Municipal de Campo Grande",
+      "url": "https://diogrande.campogrande.ms.gov.br/",
+      "url_search": "https://sig-transparencia.campogrande.ms.gov.br/relatorios-concurso-processo-seletivo/consulta",
+      "enabled": true,
+      "priority": 1,
+      "transport": "http",
+      "parser": "campo_grande_official_diary",
+      "notes": "Inclui consulta oficial de concursos/processos seletivos e publicações do Diogrande."
+    }
+  ]
+}
