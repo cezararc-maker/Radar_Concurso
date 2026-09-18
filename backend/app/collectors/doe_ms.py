@@ -1,8 +1,4 @@
-"""DOE-MS edition discovery adapter.
-
-The official DOE-MS search page exposes recent editions as direct PDF links.
-This adapter discovers those links instead of guessing edition numbers.
-"""
+"""DOE-MS edition discovery adapter."""
 
 from __future__ import annotations
 
@@ -30,7 +26,7 @@ class DoeMsEdition:
 
 
 class _EditionLinkParser(HTMLParser):
-    """Collect PDF links together with text from their containing table row."""
+    """Collect PDF links and all text from their containing table row."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -41,11 +37,8 @@ class _EditionLinkParser(HTMLParser):
         self._pending_links: list[tuple[str, str]] = []
         self.links: list[tuple[str, str, str]] = []
 
-    def handle_starttag(
-        self, tag: str, attrs: list[tuple[str, str | None]]
-    ) -> None:
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         tag = tag.lower()
-
         if tag == "tr":
             self._in_row = True
             self._row_text = []
@@ -53,14 +46,11 @@ class _EditionLinkParser(HTMLParser):
             self._current_text = []
             self._pending_links = []
             return
-
-        if tag != "a" or not self._in_row:
-            return
-
-        href = dict(attrs).get("href")
-        if href:
-            self._current_href = href
-            self._current_text = []
+        if tag == "a" and self._in_row:
+            href = dict(attrs).get("href")
+            if href:
+                self._current_href = href
+                self._current_text = []
 
     def handle_data(self, data: str) -> None:
         if self._in_row:
@@ -70,14 +60,12 @@ class _EditionLinkParser(HTMLParser):
 
     def handle_endtag(self, tag: str) -> None:
         tag = tag.lower()
-
         if tag == "a" and self._current_href is not None:
             title = " ".join(" ".join(self._current_text).split())
             self._pending_links.append((title, self._current_href))
             self._current_href = None
             self._current_text = []
             return
-
         if tag == "tr" and self._in_row:
             context = " ".join(self._row_text)
             for title, href in self._pending_links:
@@ -92,22 +80,11 @@ class DoeMsCollector(HttpCollector):
 
     name = "doe_ms"
 
-    def __init__(
-        self,
-        discovery_url: str = "https://www.diariooficial.ms.gov.br/",
-        *,
-        timeout: float = 20.0,
-    ) -> None:
-        super().__init__(
-            discovery_url,
-            source="Diário Oficial de Mato Grosso do Sul",
-            timeout=timeout,
-        )
+    def __init__(self, discovery_url: str = "https://www.diariooficial.ms.gov.br/", *, timeout: float = 20.0) -> None:
+        super().__init__(discovery_url, source="Diário Oficial de Mato Grosso do Sul", timeout=timeout)
 
     @staticmethod
-    def discover_editions(
-        html: str, *, base_url: str
-    ) -> tuple[DoeMsEdition, ...]:
+    def discover_editions(html: str, *, base_url: str) -> tuple[DoeMsEdition, ...]:
         parser = _EditionLinkParser()
         parser.feed(html)
         editions: list[DoeMsEdition] = []
@@ -120,30 +97,21 @@ class DoeMsCollector(HttpCollector):
 
             day, month, year = map(int, match_date.groups())
             full_text = f"{title} {context}"
-            edition = DoeMsEdition(
-                issue_number=int(match_issue.group(1).replace(".", "")),
-                publication_date=date(year, month, day),
-                title=title or context,
-                pdf_url=urljoin(base_url, href),
-                supplement=(
-                    "suplement" in full_text.lower()
-                    or "extra" in full_text.lower()
-                ),
+            editions.append(
+                DoeMsEdition(
+                    issue_number=int(match_issue.group(1).replace(".", "")),
+                    publication_date=date(year, month, day),
+                    title=title or context,
+                    pdf_url=urljoin(base_url, href),
+                    supplement=("suplement" in full_text.lower() or "extra" in full_text.lower()),
+                )
             )
-            editions.append(edition)
 
-        unique = {
-            (item.issue_number, item.publication_date, item.pdf_url): item
-            for item in editions
-        }
+        unique = {(e.issue_number, e.publication_date, e.pdf_url): e for e in editions}
         return tuple(
             sorted(
                 unique.values(),
-                key=lambda item: (
-                    item.publication_date,
-                    not item.supplement,
-                    item.issue_number,
-                ),
+                key=lambda e: (e.publication_date, e.issue_number, e.supplement),
                 reverse=True,
             )
         )
@@ -153,23 +121,15 @@ class DoeMsCollector(HttpCollector):
         editions = self.discover_editions(html, base_url=self.url)
         if not editions:
             raise CollectorError("Nenhuma edição DOE-MS foi encontrada na página oficial.")
-
         items = tuple(
             PublicationInput(
-                titulo=edition.title,
+                titulo=e.title,
                 fonte=self.source,
-                url=edition.pdf_url,
-                data_publicacao=edition.publication_date,
+                url=e.pdf_url,
+                data_publicacao=e.publication_date,
                 tipo="diario_oficial_edicao",
-                identificador=(
-                    f"doe-ms:{edition.issue_number}:"
-                    f"{edition.publication_date.isoformat()}:{edition.pdf_url}"
-                ),
+                identificador=f"doe-ms:{e.issue_number}:{e.publication_date.isoformat()}:{e.pdf_url}",
             )
-            for edition in editions
+            for e in editions
         )
-        return CollectorResult(
-            source=self.source,
-            collected_at=date.today(),
-            items=items,
-        )
+        return CollectorResult(source=self.source, collected_at=date.today(), items=items)
