@@ -141,8 +141,8 @@ class DoeMsCollector(HttpCollector):
                 unique.values(),
                 key=lambda item: (
                     item.publication_date,
-                    item.issue_number,
                     not item.supplement,
+                    item.issue_number,
                 ),
                 reverse=True,
             )
