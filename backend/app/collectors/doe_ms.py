@@ -30,36 +30,38 @@ class DoeMsEdition:
 
 
 class _EditionLinkParser(HTMLParser):
-    """Collect PDF links together with nearby row/container text."""
+    """Collect PDF links together with text from their containing table row."""
 
     def __init__(self) -> None:
         super().__init__()
+        self._in_row = False
+        self._row_text: list[str] = []
         self._current_href: str | None = None
         self._current_text: list[str] = []
-        self._current_context: list[str] = []
-        self._row_depth = 0
-        self._row_text: list[str] = []
         self.links: list[tuple[str, str, str]] = []
 
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+    def handle_starttag(
+        self, tag: str, attrs: list[tuple[str, str | None]]
+    ) -> None:
         tag = tag.lower()
-        if tag == "tr":
-            self._row_depth = 1
-            self._row_text = []
-            return
-        if self._row_depth:
-            self._row_depth += 1
 
-        if tag != "a":
+        if tag == "tr":
+            self._in_row = True
+            self._row_text = []
+            self._current_href = None
+            self._current_text = []
             return
+
+        if tag != "a" or not self._in_row:
+            return
+
         href = dict(attrs).get("href")
         if href:
             self._current_href = href
             self._current_text = []
-            self._current_context = list(self._row_text)
 
     def handle_data(self, data: str) -> None:
-        if self._row_depth:
+        if self._in_row:
             self._row_text.append(data)
         if self._current_href is not None:
             self._current_text.append(data)
@@ -69,16 +71,14 @@ class _EditionLinkParser(HTMLParser):
 
         if tag == "a" and self._current_href is not None:
             title = " ".join(" ".join(self._current_text).split())
-            context = " ".join(" ".join(self._row_text).split())
-            self.links.append((title, self._current_href, context))
+            self.links.append((title, self._current_href, " ".join(self._row_text)))
             self._current_href = None
             self._current_text = []
-            self._current_context = []
+            return
 
-        if self._row_depth:
-            self._row_depth -= 1
-            if tag == "tr" and self._row_depth == 0:
-                self._row_text = []
+        if tag == "tr" and self._in_row:
+            self._in_row = False
+            self._row_text = []
 
 
 class DoeMsCollector(HttpCollector):
@@ -99,7 +99,9 @@ class DoeMsCollector(HttpCollector):
         )
 
     @staticmethod
-    def discover_editions(html: str, *, base_url: str) -> tuple[DoeMsEdition, ...]:
+    def discover_editions(
+        html: str, *, base_url: str
+    ) -> tuple[DoeMsEdition, ...]:
         parser = _EditionLinkParser()
         parser.feed(html)
         editions: list[DoeMsEdition] = []
@@ -111,12 +113,16 @@ class DoeMsCollector(HttpCollector):
                 continue
 
             day, month, year = map(int, match_date.groups())
+            full_text = f"{title} {context}"
             edition = DoeMsEdition(
                 issue_number=int(match_issue.group(1).replace(".", "")),
                 publication_date=date(year, month, day),
                 title=title or context,
                 pdf_url=urljoin(base_url, href),
-                supplement=("suplement" in (title + " " + context).lower() or "extra" in (title + " " + context).lower()),
+                supplement=(
+                    "suplement" in full_text.lower()
+                    or "extra" in full_text.lower()
+                ),
             )
             editions.append(edition)
 
@@ -127,7 +133,11 @@ class DoeMsCollector(HttpCollector):
         return tuple(
             sorted(
                 unique.values(),
-                key=lambda item: (item.publication_date, item.issue_number, not item.supplement),
+                key=lambda item: (
+                    item.publication_date,
+                    item.issue_number,
+                    not item.supplement,
+                ),
                 reverse=True,
             )
         )
@@ -145,7 +155,10 @@ class DoeMsCollector(HttpCollector):
                 url=edition.pdf_url,
                 data_publicacao=edition.publication_date,
                 tipo="diario_oficial_edicao",
-                identificador=f"doe-ms:{edition.issue_number}:{edition.publication_date.isoformat()}:{edition.pdf_url}",
+                identificador=(
+                    f"doe-ms:{edition.issue_number}:"
+                    f"{edition.publication_date.isoformat()}:{edition.pdf_url}"
+                ),
             )
             for edition in editions
         )
