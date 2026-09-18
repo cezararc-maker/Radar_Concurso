@@ -1,0 +1,91 @@
+{
+  "id": "administrativo",
+  "nome": "Administrativo",
+  "ativo": true,
+  "subnichos": [
+    {
+      "id": "contabilidade",
+      "nome": "Contabilidade",
+      "ativo": true,
+      "palavras_chave": [
+        "contador",
+        "contabilidade",
+        "analista contábil",
+        "técnico em contabilidade",
+        "contábil",
+        "contabilidade pública"
+      ]
+    },
+    {
+      "id": "fiscal",
+      "nome": "Fiscal",
+      "ativo": true,
+      "palavras_chave": [
+        "auditor fiscal",
+        "fiscal",
+        "fiscalização tributária",
+        "tributação",
+        "receita"
+      ]
+    },
+    {
+      "id": "financas",
+      "nome": "Finanças",
+      "ativo": true,
+      "palavras_chave": [
+        "finanças",
+        "financeiro",
+        "analista financeiro",
+        "gestão financeira",
+        "finanças e controle"
+      ]
+    },
+    {
+      "id": "gestao",
+      "nome": "Gestão",
+      "ativo": true,
+      "palavras_chave": [
+        "gestão",
+        "gestão pública",
+        "administrador",
+        "administração pública"
+      ]
+    },
+    {
+      "id": "auditoria",
+      "nome": "Auditoria",
+      "ativo": true,
+      "palavras_chave": [
+        "auditor",
+        "auditoria",
+        "auditor de controle",
+        "controle interno",
+        "controle externo"
+      ]
+    },
+    {
+      "id": "departamento_pessoal",
+      "nome": "Departamento Pessoal",
+      "ativo": true,
+      "palavras_chave": [
+        "departamento pessoal",
+        "folha de pagamento",
+        "administração de pessoal",
+        "encargos trabalhistas",
+        "esocial"
+      ]
+    },
+    {
+      "id": "recursos_humanos",
+      "nome": "Recursos Humanos",
+      "ativo": true,
+      "palavras_chave": [
+        "recursos humanos",
+        "analista de rh",
+        "gestão de pessoas",
+        "gestão de recursos humanos",
+        "administração de recursos humanos"
+      ]
+    }
+  ]
+}
