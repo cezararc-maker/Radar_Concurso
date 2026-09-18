@@ -29,6 +29,7 @@ class TestDoeMsCollector(unittest.TestCase):
         self.assertEqual(editions[0].publication_date, date(2026, 9, 17))
         self.assertFalse(editions[0].supplement)
         self.assertTrue(editions[2].supplement)
+        self.assertEqual(editions[2].issue_number, 12281)
 
     @patch.object(DoeMsCollector, "fetch", return_value=HTML)
     def test_collect_normalizes_discovered_editions(self, _fetch):
