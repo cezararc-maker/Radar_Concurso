@@ -17,7 +17,7 @@ from backend.app.collectors.http import HttpCollector
 from backend.app.services.publication_tracker import PublicationInput
 
 _DATE_RE = re.compile(r"\b(\d{2})/(\d{2})/(\d{4})\b")
-_ISSUE_RE = re.compile(r"n\.\s*(\d{1,6})", re.IGNORECASE)
+_ISSUE_RE = re.compile(r"n\.\s*([\d.]+)", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -112,7 +112,7 @@ class DoeMsCollector(HttpCollector):
 
             day, month, year = map(int, match_date.groups())
             edition = DoeMsEdition(
-                issue_number=int(match_issue.group(1)),
+                issue_number=int(match_issue.group(1).replace(".", "")),
                 publication_date=date(year, month, day),
                 title=title or context,
                 pdf_url=urljoin(base_url, href),
