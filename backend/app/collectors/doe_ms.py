@@ -103,7 +103,7 @@ class DoeMsCollector(HttpCollector):
         return tuple(
             sorted(
                 unique.values(),
-                key=lambda item: (item.publication_date, item.issue_number, item.pdf_url),
+                key=lambda item: (item.publication_date, item.issue_number, not item.supplement),
                 reverse=True,
             )
         )
