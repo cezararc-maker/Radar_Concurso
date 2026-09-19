@@ -54,6 +54,21 @@ INCOMPATIBLE_ELECTORAL_CONTEXT_TERMS = (
     "quadrienio",
 )
 
+INCOMPATIBLE_ADMINISTRATIVE_CONTEXT_TERMS = (
+    "cadastro fiscal",
+    "regulamento do icms",
+    "retencoes de tributos",
+    "curso completo",
+    "aquisicao de",
+    "carteira de identidade",
+    "carteira nacional de habilitacao",
+    "dependentes financeiros",
+    "gerenciamento de crises",
+    "mediacoes de conflitos",
+    "nocoes teoricas e praticas",
+    "setor de recursos humanos",
+)
+
 
 @dataclass(frozen=True)
 class PublicationInput:
@@ -154,10 +169,17 @@ def find_subniche_evidence(
                     term in context
                     for term in UNEQUIVOCAL_CONTEST_CONTEXT_TERMS
                 )
+                has_incompatible_administrative_context = any(
+                    term in context
+                    for term in INCOMPATIBLE_ADMINISTRATIVE_CONTEXT_TERMS
+                )
                 if (
                     has_contest_context
                     and (
-                        not has_incompatible_electoral_context
+                        (
+                            not has_incompatible_electoral_context
+                            and not has_incompatible_administrative_context
+                        )
                         or has_unequivocal_contest_context
                     )
                 ):
