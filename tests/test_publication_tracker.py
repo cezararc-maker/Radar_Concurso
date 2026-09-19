@@ -8,7 +8,11 @@ from sqlalchemy.orm import Session
 
 from backend.app.database.models import Base
 from backend.app.services.niche_registry import NicheRegistry
-from backend.app.services.publication_tracker import PublicationInput, PublicationTracker
+from backend.app.services.publication_tracker import (
+    PublicationInput,
+    PublicationTracker,
+    match_subniches,
+)
 
 
 class TestPublicationTracker(unittest.TestCase):
@@ -18,7 +22,9 @@ class TestPublicationTracker(unittest.TestCase):
             niches = root / "niches"
             niches.mkdir()
             (niches / "administrativo.json").write_text(
-                '{"id":"administrativo","nome":"Administrativo","ativo":true,"subnichos":[{"id":"contabilidade","nome":"Contabilidade","ativo":true,"palavras_chave":["analista contabil","contador"]}]}',
+                '{"id":"administrativo","nome":"Administrativo","ativo":true,'
+                '"subnichos":[{"id":"contabilidade","nome":"Contabilidade",'
+                '"ativo":true,"palavras_chave":["analista contabil","contador"]}]}',
                 encoding="utf-8",
             )
             engine = create_engine(f"sqlite:///{root / 'radar.sqlite3'}")
@@ -39,10 +45,40 @@ class TestPublicationTracker(unittest.TestCase):
                     second = tracker.register(item)
                     self.assertTrue(first.is_new)
                     self.assertFalse(second.is_new)
-                    self.assertEqual(first.publication.identificador, second.publication.identificador)
-                    self.assertEqual(first.matched_subnicho_ids, ("contabilidade",))
+                    self.assertEqual(
+                        first.publication.identificador,
+                        second.publication.identificador,
+                    )
+                    self.assertEqual(
+                        first.matched_subnicho_ids,
+                        ("contabilidade",),
+                    )
             finally:
                 engine.dispose()
+
+    def test_requires_contest_context_near_niche_keyword(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            niches = Path(temp_dir) / "niches"
+            niches.mkdir()
+            (niches / "administrativo.json").write_text(
+                '{"id":"administrativo","nome":"Administrativo","ativo":true,'
+                '"subnichos":[{"id":"auditoria","nome":"Auditoria",'
+                '"ativo":true,"palavras_chave":["auditoria","auditor"]}]}',
+                encoding="utf-8",
+            )
+            registry = NicheRegistry(niches)
+
+            unrelated = PublicationInput(
+                titulo="Diário Oficial",
+                conteudo="Concurso público. " + ("x" * 1200) + " Auditoria interna anual.",
+            )
+            relevant = PublicationInput(
+                titulo="Edital de concurso",
+                conteudo="Vagas para o cargo de Auditor de Controle.",
+            )
+
+            self.assertEqual(match_subniches(unrelated, registry), ())
+            self.assertEqual(match_subniches(relevant, registry), ("auditoria",))
 
 
 if __name__ == "__main__":
