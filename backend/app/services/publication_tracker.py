@@ -41,6 +41,15 @@ UNEQUIVOCAL_CONTEST_CONTEXT_TERMS = (
     "candidatos ao cargo",
 )
 
+WEAK_CONTEST_CONTEXT_TERMS = (
+    "candidato",
+    "candidatos",
+    "inscricao para",
+    "inscricoes",
+    "vaga para",
+    "vagas para",
+)
+
 INCOMPATIBLE_ELECTORAL_CONTEXT_TERMS = (
     "conselho fiscal",
     "eleicao",
@@ -173,14 +182,21 @@ def find_subniche_evidence(
                     term in context
                     for term in INCOMPATIBLE_ADMINISTRATIVE_CONTEXT_TERMS
                 )
+                has_weak_contest_context = any(
+                    term in context for term in WEAK_CONTEST_CONTEXT_TERMS
+                )
+                has_incompatible_context = (
+                    has_incompatible_electoral_context
+                    or has_incompatible_administrative_context
+                )
                 if (
                     has_contest_context
                     and (
-                        (
-                            not has_incompatible_electoral_context
-                            and not has_incompatible_administrative_context
+                        has_unequivocal_contest_context
+                        or (
+                            not has_incompatible_context
+                            and has_weak_contest_context
                         )
-                        or has_unequivocal_contest_context
                     )
                 ):
                     excerpt_start = max(0, position - excerpt_radius)
