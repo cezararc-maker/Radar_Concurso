@@ -19,7 +19,7 @@ class FakeControlledCollector:
                 items=(
                     PublicationInput(
                         titulo=f"{source} - Diário Oficial",
-                        conteudo="Edital para Analista Contábil.",
+                        conteudo="Edital de concurso para Analista Contábil.",
                         fonte=source,
                         url="https://assets.example/DO12281.pdf",
                         data_publicacao=date(2026, 9, 17),
