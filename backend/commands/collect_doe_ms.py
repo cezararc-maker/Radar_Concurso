@@ -39,6 +39,13 @@ def render_report(
     duplicate_count: int,
     matched_subniche_ids: tuple[str, ...],
 ) -> str:
+    if matched_subniche_ids:
+        subniche_summary = ", ".join(matched_subniche_ids)
+    elif duplicate_count and not new_count:
+        subniche_summary = "não reavaliado (publicação duplicada)"
+    else:
+        subniche_summary = "nenhum"
+
     lines = [
         "RADAR CONCURSO - COLETA DOE-MS",
         "=" * 40,
@@ -50,8 +57,7 @@ def render_report(
         f"Falhas: {len(collection.failures)}",
         f"Publicações novas: {new_count}",
         f"Publicações duplicadas: {duplicate_count}",
-        "Subnichos encontrados: "
-        + (", ".join(matched_subniche_ids) if matched_subniche_ids else "nenhum"),
+        f"Subnichos encontrados: {subniche_summary}",
     ]
 
     if collection.failures:
