@@ -65,7 +65,9 @@ class TestPublicationTracker(unittest.TestCase):
                 '{"id":"administrativo","nome":"Administrativo","ativo":true,'
                 '"subnichos":['
                 '{"id":"fiscal","nome":"Fiscal","ativo":true,'
-                '"palavras_chave":["fiscal"]},'
+                '"palavras_chave":["fiscal","auditor fiscal"]},'
+                '{"id":"auditoria","nome":"Auditoria","ativo":true,'
+                '"palavras_chave":["auditor"]},'
                 '{"id":"financas","nome":"Finanças","ativo":true,'
                 '"palavras_chave":["financeiro"]},'
                 '{"id":"gestao","nome":"Gestão","ativo":true,'
@@ -81,6 +83,12 @@ class TestPublicationTracker(unittest.TestCase):
                 "será indicada após aprovação da lei orçamentária.",
                 "Reunião na Secretaria de Estado de Governo e Gestão "
                 "Estratégica, localizada no Parque dos Poderes.",
+                "Na condição de pensionista de ex-servidor da Secretaria de "
+                "Estado de Fazenda, que detinha o cargo de Auditor Fiscal da "
+                "Receita Estadual, em conformidade com parecer da AGEPREV.",
+                "Cônjuge do ex-servidor aposentado no cargo de Técnico de "
+                "Serviços Operacionais da Agência Estadual de Gestão de "
+                "Empreendimentos, conforme a legislação previdenciária.",
             )
 
             for excerpt in excerpts:
