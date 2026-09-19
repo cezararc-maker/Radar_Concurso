@@ -77,6 +77,13 @@ INCOMPATIBLE_ADMINISTRATIVE_CONTEXT_TERMS = (
     "mediacoes de conflitos",
     "nocoes teoricas e praticas",
     "setor de recursos humanos",
+    "procedimento licitatorio",
+    "processo licitatorio",
+    "autotutela da administracao publica",
+    "cargo, emprego, funcao publica",
+    "acumular proventos",
+    "regularidade fiscal",
+    "documentos de habilitacao",
 )
 
 
@@ -194,10 +201,19 @@ def find_subniche_evidence(
                         or "carteira nacional de habilitacao" in context
                     )
                 )
+                has_exam_proctor_context = (
+                    keyword == "fiscal"
+                    and (
+                        "respectivo fiscal" in context
+                        or "fiscal de sala" in context
+                        or "aplicacao da prova" in context
+                    )
+                )
                 has_incompatible_context = (
                     has_incompatible_electoral_context
                     or has_incompatible_administrative_context
                     or has_identity_document_context
+                    or has_exam_proctor_context
                 )
                 if (
                     has_contest_context
