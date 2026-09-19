@@ -15,7 +15,11 @@ from backend.app.collectors.doe_ms_documents import (
 from backend.app.config.settings import DATABASE_URL, NICHE_CONFIG_DIR, PROJECT_ROOT
 from backend.app.database.database import initialize_database
 from backend.app.services.niche_registry import NicheRegistry
-from backend.app.services.publication_tracker import PublicationTracker
+from backend.app.services.publication_tracker import (
+    PublicationTracker,
+    SubnicheMatchEvidence,
+    find_subniche_evidence,
+)
 
 
 @dataclass(frozen=True)
@@ -30,6 +34,7 @@ class DoeMsCommandResult:
     new_count: int
     duplicate_count: int
     matched_subniche_ids: tuple[str, ...]
+    match_evidence: tuple[SubnicheMatchEvidence, ...]
 
 
 def render_report(
@@ -38,6 +43,7 @@ def render_report(
     new_count: int,
     duplicate_count: int,
     matched_subniche_ids: tuple[str, ...],
+    match_evidence: tuple[SubnicheMatchEvidence, ...] = (),
 ) -> str:
     if matched_subniche_ids:
         subniche_summary = ", ".join(matched_subniche_ids)
@@ -59,6 +65,18 @@ def render_report(
         f"Publicações duplicadas: {duplicate_count}",
         f"Subnichos encontrados: {subniche_summary}",
     ]
+
+    if match_evidence:
+        lines.extend(("", "EVIDÊNCIAS DE CLASSIFICAÇÃO", "-" * 40))
+        for evidence in match_evidence:
+            lines.extend(
+                (
+                    f"Subnicho: {evidence.subniche_id}",
+                    f"Palavra-chave: {evidence.keyword}",
+                    f"Trecho: {evidence.excerpt}",
+                    "",
+                )
+            )
 
     if collection.failures:
         lines.extend(("", "FALHAS", "-" * 40))
@@ -112,6 +130,12 @@ def execute_collection(
             }
         )
     )
+    match_evidence = tuple(
+        evidence
+        for publication, tracking in zip(collection.result.items, tracked)
+        if tracking.is_new
+        for evidence in find_subniche_evidence(publication, registry)
+    )
 
     destination = Path(report_path) if report_path else (
         PROJECT_ROOT
@@ -127,6 +151,7 @@ def execute_collection(
             new_count=new_count,
             duplicate_count=duplicate_count,
             matched_subniche_ids=matched_subniche_ids,
+            match_evidence=match_evidence,
         ),
         # UTF-8 with BOM is detected correctly by Windows PowerShell 5.1.
         encoding="utf-8-sig",
@@ -141,6 +166,7 @@ def execute_collection(
         new_count=new_count,
         duplicate_count=duplicate_count,
         matched_subniche_ids=matched_subniche_ids,
+        match_evidence=match_evidence,
     )
 
 
