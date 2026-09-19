@@ -57,8 +57,10 @@ class TestCollectDoeMsCommand(unittest.TestCase):
             )
 
             self.assertTrue(report_path.exists())
-            report = report_path.read_text(encoding="utf-8")
+            self.assertTrue(report_path.read_bytes().startswith(b"\xef\xbb\xbf"))
+            report = report_path.read_text(encoding="utf-8-sig")
             self.assertIn("RADAR CONCURSO - COLETA DOE-MS", report)
+            self.assertIn("Fonte: Diário Oficial de Mato Grosso do Sul", report)
             self.assertIn("Edições encontradas: 3", report)
             self.assertIn("PDFs processados: 1", report)
             self.assertIn("Publicações novas: 1", report)
