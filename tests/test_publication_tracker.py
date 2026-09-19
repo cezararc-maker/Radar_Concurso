@@ -124,6 +124,36 @@ class TestPublicationTracker(unittest.TestCase):
 
             self.assertEqual(match_subniches(item, registry), ())
 
+
+    def test_rejects_observed_doe_ms_administrative_contexts(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            niches = Path(temp_dir) / "niches"
+            niches.mkdir()
+            (niches / "administrativo.json").write_text(
+                '{"id":"administrativo","nome":"Administrativo","ativo":true,'
+                '"subnichos":['
+                '{"id":"fiscal","nome":"Fiscal","ativo":true,"palavras_chave":["fiscal"]},'
+                '{"id":"financas","nome":"Finanças","ativo":true,"palavras_chave":["financeiro","finanças"]},'
+                '{"id":"gestao","nome":"Gestão","ativo":true,"palavras_chave":["gestão","administração pública"]},'
+                '{"id":"recursos_humanos","nome":"Recursos Humanos","ativo":true,"palavras_chave":["recursos humanos"]}'
+                ']}',
+                encoding="utf-8",
+            )
+            registry = NicheRegistry(niches)
+            excerpts = (
+                "inscrições para curso completo de retenções de tributos na administração pública",
+                "documento de identidade expedido por entidades integrantes da administração pública para candidatos",
+                "dependentes financeiros do candidato, quando couber",
+                "noções teóricas e práticas de administração e finanças; candidato disciplina",
+                "declaração expedida pelo setor de recursos humanos do órgão; candidato em efetivo exercício",
+                "cadastro fiscal ao regulamento do ICMS; inscrições cadastrais",
+            )
+
+            for excerpt in excerpts:
+                with self.subTest(excerpt=excerpt):
+                    item = PublicationInput(titulo="Diário Oficial", conteudo=excerpt)
+                    self.assertEqual(match_subniches(item, registry), ())
+
     def test_requires_contest_context_near_niche_keyword(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             niches = Path(temp_dir) / "niches"
