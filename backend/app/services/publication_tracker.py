@@ -27,7 +27,6 @@ CONTEST_CONTEXT_TERMS = (
     "candidatos",
     "vaga para",
     "vagas para",
-    "cargo de",
     "prova objetiva",
     "prova escrita",
     "certame",
