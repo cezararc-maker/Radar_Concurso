@@ -24,12 +24,19 @@ class TestDoeMsCollector(unittest.TestCase):
         editions = DoeMsCollector.discover_editions(
             HTML, base_url="https://www.diariooficial.ms.gov.br/"
         )
+
         self.assertEqual(len(editions), 3)
-        self.assertEqual(editions[0].issue_number, 12281)
-        self.assertEqual(editions[0].publication_date, date(2026, 9, 17))
-        self.assertFalse(editions[0].supplement)
-        self.assertTrue(editions[2].supplement)
-        self.assertEqual(editions[2].issue_number, 12281)
+        self.assertEqual(
+            [
+                (edition.issue_number, edition.publication_date, edition.supplement)
+                for edition in editions
+            ],
+            [
+                (12281, date(2026, 9, 17), False),
+                (12280, date(2026, 9, 16), False),
+                (12281, date(2026, 9, 17), True),
+            ],
+        )
 
     @patch.object(DoeMsCollector, "fetch", return_value=HTML)
     def test_collect_normalizes_discovered_editions(self, _fetch):
