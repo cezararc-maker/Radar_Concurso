@@ -80,9 +80,13 @@ class TestCollectDoeMsCommand(unittest.TestCase):
             self.assertIn("PDFs processados: 1", report)
             self.assertIn("Publicações novas: 1", report)
             self.assertIn("Subnichos encontrados: contabilidade", report)
+            self.assertIn("EVIDÊNCIAS DE CLASSIFICAÇÃO", report)
+            self.assertIn("Palavra-chave: analista contábil", report)
+            self.assertIn("Trecho: ", report)
             self.assertEqual(result.new_count, 1)
             self.assertEqual(result.failure_count, 0)
             self.assertEqual(result.matched_subniche_ids, ("contabilidade",))
+            self.assertEqual(len(result.match_evidence), 1)
 
 
 if __name__ == "__main__":
