@@ -45,6 +45,15 @@ class PublicationInput:
 
 
 @dataclass(frozen=True)
+class SubnicheMatchEvidence:
+    """Keyword and nearby text that justified one subniche match."""
+
+    subniche_id: str
+    keyword: str
+    excerpt: str
+
+
+@dataclass(frozen=True)
 class TrackingResult:
     """Result of registering a collected publication."""
 
@@ -79,6 +88,60 @@ def build_publication_identifier(item: PublicationInput) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+def find_subniche_evidence(
+    item: PublicationInput,
+    registry: NicheRegistry,
+    *,
+    context_window: int = 500,
+    excerpt_radius: int = 180,
+) -> tuple[SubnicheMatchEvidence, ...]:
+    """Return the first contest-context occurrence for each matched subniche."""
+    text = normalize_text(f"{item.titulo} {item.conteudo}")
+    evidence: list[SubnicheMatchEvidence] = []
+
+    for subniche_id, keywords in registry.keyword_map().items():
+        matched = False
+        for configured_keyword in keywords:
+            keyword = normalize_text(configured_keyword)
+            if not keyword:
+                continue
+
+            start = 0
+            while True:
+                position = text.find(keyword, start)
+                if position < 0:
+                    break
+
+                context_start = max(0, position - context_window)
+                context_end = min(
+                    len(text),
+                    position + len(keyword) + context_window,
+                )
+                context = text[context_start:context_end]
+                if any(term in context for term in CONTEST_CONTEXT_TERMS):
+                    excerpt_start = max(0, position - excerpt_radius)
+                    excerpt_end = min(
+                        len(text),
+                        position + len(keyword) + excerpt_radius,
+                    )
+                    evidence.append(
+                        SubnicheMatchEvidence(
+                            subniche_id=subniche_id,
+                            keyword=configured_keyword,
+                            excerpt=text[excerpt_start:excerpt_end],
+                        )
+                    )
+                    matched = True
+                    break
+
+                start = position + max(1, len(keyword))
+
+            if matched:
+                break
+
+    return tuple(evidence)
+
+
 def keyword_has_contest_context(
     text: str,
     keyword: str,
@@ -86,19 +149,25 @@ def keyword_has_contest_context(
     context_window: int = 500,
 ) -> bool:
     """Require a contest term near each niche keyword occurrence."""
-    start = 0
-    while True:
-        position = text.find(keyword, start)
-        if position < 0:
-            return False
+    probe = PublicationInput(titulo="", conteudo=text)
+    registry = _SingleKeywordRegistry(keyword)
+    return bool(
+        find_subniche_evidence(
+            probe,
+            registry,
+            context_window=context_window,
+        )
+    )
 
-        excerpt_start = max(0, position - context_window)
-        excerpt_end = min(len(text), position + len(keyword) + context_window)
-        excerpt = text[excerpt_start:excerpt_end]
-        if any(term in excerpt for term in CONTEST_CONTEXT_TERMS):
-            return True
 
-        start = position + max(1, len(keyword))
+class _SingleKeywordRegistry:
+    """Small internal adapter retained for the public helper contract."""
+
+    def __init__(self, keyword: str) -> None:
+        self.keyword = keyword
+
+    def keyword_map(self) -> dict[str, list[str]]:
+        return {"probe": [self.keyword]}
 
 
 def match_subniches(
@@ -106,22 +175,10 @@ def match_subniches(
     registry: NicheRegistry,
 ) -> tuple[str, ...]:
     """Return subniches supported by a nearby public-contest context."""
-    text = normalize_text(f"{item.titulo} {item.conteudo}")
-    matches: list[str] = []
-
-    for subniche_id, keywords in registry.keyword_map().items():
-        normalized_keywords = (
-            normalize_text(keyword)
-            for keyword in keywords
-            if normalize_text(keyword)
-        )
-        if any(
-            keyword_has_contest_context(text, keyword)
-            for keyword in normalized_keywords
-        ):
-            matches.append(subniche_id)
-
-    return tuple(matches)
+    return tuple(
+        match.subniche_id
+        for match in find_subniche_evidence(item, registry)
+    )
 
 
 class PublicationTracker:
