@@ -150,7 +150,7 @@ def keyword_has_contest_context(
     text: str,
     keyword: str,
     *,
-    context_window: int = 500,
+    context_window: int = 220,
 ) -> bool:
     """Require a contest term near each niche keyword occurrence."""
     probe = PublicationInput(titulo="", conteudo=text)
