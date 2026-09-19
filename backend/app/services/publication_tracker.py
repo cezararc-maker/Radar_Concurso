@@ -70,6 +70,7 @@ INCOMPATIBLE_ADMINISTRATIVE_CONTEXT_TERMS = (
     "curso completo",
     "aquisicao de",
     "carteira de identidade",
+    "documento de identidade",
     "carteira nacional de habilitacao",
     "dependentes financeiros",
     "gerenciamento de crises",
@@ -185,9 +186,18 @@ def find_subniche_evidence(
                 has_weak_contest_context = any(
                     term in context for term in WEAK_CONTEST_CONTEXT_TERMS
                 )
+                has_identity_document_context = (
+                    "administracao publica" in context
+                    and (
+                        "documento de identidade" in context
+                        or "carteira de identidade" in context
+                        or "carteira nacional de habilitacao" in context
+                    )
+                )
                 has_incompatible_context = (
                     has_incompatible_electoral_context
                     or has_incompatible_administrative_context
+                    or has_identity_document_context
                 )
                 if (
                     has_contest_context
