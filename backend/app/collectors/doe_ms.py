@@ -111,9 +111,9 @@ class DoeMsCollector(HttpCollector):
         return tuple(
             sorted(
                 unique.values(),
-                # Mais recente primeiro; para a mesma edição/data, a edição
-                # principal vem antes do suplemento.
-                key=lambda e: (e.publication_date, e.issue_number, not e.supplement),
+                # As edições principais vêm primeiro; dentro de cada grupo,
+                # a data mais recente e o maior número têm prioridade.
+                key=lambda e: (not e.supplement, e.publication_date, e.issue_number),
                 reverse=True,
             )
         )
