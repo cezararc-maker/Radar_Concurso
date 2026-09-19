@@ -57,6 +57,40 @@ class TestPublicationTracker(unittest.TestCase):
             finally:
                 engine.dispose()
 
+    def test_rejects_real_doe_ms_administrative_false_positives(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            niches = Path(temp_dir) / "niches"
+            niches.mkdir()
+            (niches / "administrativo.json").write_text(
+                '{"id":"administrativo","nome":"Administrativo","ativo":true,'
+                '"subnichos":['
+                '{"id":"fiscal","nome":"Fiscal","ativo":true,'
+                '"palavras_chave":["fiscal"]},'
+                '{"id":"financas","nome":"Finanças","ativo":true,'
+                '"palavras_chave":["financeiro"]},'
+                '{"id":"gestao","nome":"Gestão","ativo":true,'
+                '"palavras_chave":["gestão"]}'
+                ']}',
+                encoding="utf-8",
+            )
+            registry = NicheRegistry(niches)
+            excerpts = (
+                "ICMS. Falta de emissão de documento fiscal. Prova documental. "
+                "Regime de substituição tributária e obrigação acessória.",
+                "A dotação relativa aos exercícios financeiros subsequentes "
+                "será indicada após aprovação da lei orçamentária.",
+                "Reunião na Secretaria de Estado de Governo e Gestão "
+                "Estratégica, localizada no Parque dos Poderes.",
+            )
+
+            for excerpt in excerpts:
+                with self.subTest(excerpt=excerpt):
+                    item = PublicationInput(
+                        titulo="Diário Oficial",
+                        conteudo=excerpt,
+                    )
+                    self.assertEqual(match_subniches(item, registry), ())
+
     def test_requires_contest_context_near_niche_keyword(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             niches = Path(temp_dir) / "niches"
