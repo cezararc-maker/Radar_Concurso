@@ -32,6 +32,28 @@ CONTEST_CONTEXT_TERMS = (
     "certame",
 )
 
+UNEQUIVOCAL_CONTEST_CONTEXT_TERMS = (
+    "concurso publico",
+    "processo seletivo",
+    "edital de concurso",
+    "certame",
+    "prova objetiva",
+    "candidatos ao cargo",
+)
+
+INCOMPATIBLE_ELECTORAL_CONTEXT_TERMS = (
+    "conselho fiscal",
+    "eleicao",
+    "eleicoes",
+    "chapa",
+    "chapas",
+    "diretoria executiva",
+    "filiado",
+    "filiados",
+    "mandato",
+    "quadrienio",
+)
+
 
 @dataclass(frozen=True)
 class PublicationInput:
@@ -121,7 +143,24 @@ def find_subniche_evidence(
                     position + len(keyword) + context_window,
                 )
                 context = text[context_start:context_end]
-                if any(term in context for term in CONTEST_CONTEXT_TERMS):
+                has_contest_context = any(
+                    term in context for term in CONTEST_CONTEXT_TERMS
+                )
+                has_incompatible_electoral_context = any(
+                    term in context
+                    for term in INCOMPATIBLE_ELECTORAL_CONTEXT_TERMS
+                )
+                has_unequivocal_contest_context = any(
+                    term in context
+                    for term in UNEQUIVOCAL_CONTEST_CONTEXT_TERMS
+                )
+                if (
+                    has_contest_context
+                    and (
+                        not has_incompatible_electoral_context
+                        or has_unequivocal_contest_context
+                    )
+                ):
                     excerpt_start = max(0, position - excerpt_radius)
                     excerpt_end = min(
                         len(text),
