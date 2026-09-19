@@ -1,4 +1,4 @@
-"""Deduplication and classification of collected public notices."""
+"""Deduplication and contextual classification of collected public notices."""
 
 from __future__ import annotations
 
@@ -7,13 +7,27 @@ import re
 import unicodedata
 from dataclasses import dataclass
 from datetime import date
-from typing import Iterable
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.database.models import Concurso, Publicacao
 from backend.app.services.niche_registry import NicheRegistry
+
+
+CONTEST_CONTEXT_TERMS = (
+    "concurso",
+    "processo seletivo",
+    "selecao publica",
+    "edital",
+    "inscricao",
+    "candidato",
+    "candidatos",
+    "vaga",
+    "vagas",
+    "prova",
+    "certame",
+)
 
 
 @dataclass(frozen=True)
@@ -43,7 +57,9 @@ class TrackingResult:
 def normalize_text(value: str) -> str:
     """Normalize text for stable comparisons."""
     normalized = unicodedata.normalize("NFKD", value)
-    normalized = "".join(char for char in normalized if not unicodedata.combining(char))
+    normalized = "".join(
+        char for char in normalized if not unicodedata.combining(char)
+    )
     return re.sub(r"\s+", " ", normalized).strip().lower()
 
 
@@ -63,13 +79,48 @@ def build_publication_identifier(item: PublicationInput) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def match_subniches(item: PublicationInput, registry: NicheRegistry) -> tuple[str, ...]:
-    """Return active subniches whose keywords occur in the publication text."""
+def keyword_has_contest_context(
+    text: str,
+    keyword: str,
+    *,
+    context_window: int = 500,
+) -> bool:
+    """Require a contest term near each niche keyword occurrence."""
+    start = 0
+    while True:
+        position = text.find(keyword, start)
+        if position < 0:
+            return False
+
+        excerpt_start = max(0, position - context_window)
+        excerpt_end = min(len(text), position + len(keyword) + context_window)
+        excerpt = text[excerpt_start:excerpt_end]
+        if any(term in excerpt for term in CONTEST_CONTEXT_TERMS):
+            return True
+
+        start = position + max(1, len(keyword))
+
+
+def match_subniches(
+    item: PublicationInput,
+    registry: NicheRegistry,
+) -> tuple[str, ...]:
+    """Return subniches supported by a nearby public-contest context."""
     text = normalize_text(f"{item.titulo} {item.conteudo}")
     matches: list[str] = []
+
     for subniche_id, keywords in registry.keyword_map().items():
-        if any(normalize_text(keyword) in text for keyword in keywords):
+        normalized_keywords = (
+            normalize_text(keyword)
+            for keyword in keywords
+            if normalize_text(keyword)
+        )
+        if any(
+            keyword_has_contest_context(text, keyword)
+            for keyword in normalized_keywords
+        ):
             matches.append(subniche_id)
+
     return tuple(matches)
 
 
