@@ -6,7 +6,7 @@ from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from backend.app.collectors.base import CollectorResult
+from backend.app.collectors.base import CollectorError, CollectorResult
 from backend.app.collectors.doe_ms_documents import DoeMsDocumentCollector
 from backend.app.database.models import Base
 from backend.app.services.collection_pipeline import CollectionPipeline
@@ -28,6 +28,30 @@ class FakeEditionCollector:
                     tipo="diario_oficial_edicao",
                     identificador="doe-ms:12281:2026-09-17",
                 ),
+            ),
+        )
+
+
+class FakeMultipleEditionCollector:
+    def collect(self):
+        source = "Diário Oficial de Mato Grosso do Sul"
+        return CollectorResult(
+            source=source,
+            collected_at=date(2026, 9, 17),
+            items=tuple(
+                PublicationInput(
+                    titulo=f"Diário Oficial Eletrônico n. {issue}",
+                    fonte=source,
+                    url=f"https://assets.example/DO{issue}.pdf",
+                    data_publicacao=publication_date,
+                    tipo="diario_oficial_edicao",
+                    identificador=f"doe-ms:{issue}:{publication_date.isoformat()}",
+                )
+                for issue, publication_date in (
+                    (12281, date(2026, 9, 17)),
+                    (12280, date(2026, 9, 16)),
+                    (12279, date(2026, 9, 15)),
+                )
             ),
         )
 
@@ -55,6 +79,13 @@ class FakePdfCollector:
                 ),
             ),
         )
+
+
+class FakeSometimesFailingPdfCollector(FakePdfCollector):
+    def collect(self):
+        if "12281" in self.identifier:
+            raise CollectorError("PDF indisponível")
+        return super().collect()
 
 
 class TestDoeMsPipeline(unittest.TestCase):
@@ -96,6 +127,23 @@ class TestDoeMsPipeline(unittest.TestCase):
                     self.assertFalse(second.tracked_items[0].is_new)
             finally:
                 engine.dispose()
+
+    def test_limits_editions_and_reports_individual_pdf_failures(self):
+        collector = DoeMsDocumentCollector(
+            FakeMultipleEditionCollector(),
+            pdf_collector_factory=FakeSometimesFailingPdfCollector,
+            max_editions=2,
+        )
+
+        report = collector.collect_with_report()
+
+        self.assertEqual(report.discovered_count, 3)
+        self.assertEqual(report.attempted_count, 2)
+        self.assertEqual(len(report.result.items), 1)
+        self.assertEqual(len(report.failures), 1)
+        self.assertIn("12281", report.failures[0].identifier)
+        self.assertEqual(report.failures[0].reason, "PDF indisponível")
+        self.assertIn("12280", report.result.items[0].identificador)
 
 
 if __name__ == "__main__":
