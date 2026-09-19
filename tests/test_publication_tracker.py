@@ -99,6 +99,31 @@ class TestPublicationTracker(unittest.TestCase):
                     )
                     self.assertEqual(match_subniches(item, registry), ())
 
+
+    def test_rejects_receita_federal_document_requirement_false_positive(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            niches = Path(temp_dir) / "niches"
+            niches.mkdir()
+            (niches / "administrativo.json").write_text(
+                '{"id":"administrativo","nome":"Administrativo","ativo":true,'
+                '"subnichos":[{"id":"fiscal","nome":"Fiscal","ativo":true,'
+                '"palavras_chave":["auditor fiscal","fiscal","fiscalização tributária",'
+                '"tributação"]}]}',
+                encoding="utf-8",
+            )
+            registry = NicheRegistry(niches)
+            item = PublicationInput(
+                titulo="Diário Oficial",
+                conteudo=(
+                    "copia digital do cadastro de pessoa fisica - cpf ou comprovante "
+                    "emitido no site da receita federal; copia digital do diploma ou "
+                    "certificado de conclusao de curso de graduacao ou declaracao de "
+                    "previsao de conclusao do curso de graduacao para candidatos"
+                ),
+            )
+
+            self.assertEqual(match_subniches(item, registry), ())
+
     def test_requires_contest_context_near_niche_keyword(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             niches = Path(temp_dir) / "niches"
