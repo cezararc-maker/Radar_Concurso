@@ -122,7 +122,8 @@ def execute_collection(
             duplicate_count=duplicate_count,
             matched_subniche_ids=matched_subniche_ids,
         ),
-        encoding="utf-8",
+        # UTF-8 with BOM is detected correctly by Windows PowerShell 5.1.
+        encoding="utf-8-sig",
     )
 
     return DoeMsCommandResult(
