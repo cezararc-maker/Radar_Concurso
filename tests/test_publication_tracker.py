@@ -129,6 +129,51 @@ class TestPublicationTracker(unittest.TestCase):
             self.assertEqual(evidence[0].keyword, "auditor")
             self.assertIn("edital de concurso", evidence[0].excerpt)
 
+    def test_rejects_real_doe_ms_union_election_false_positive(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            niches = Path(temp_dir) / "niches"
+            niches.mkdir()
+            (niches / "administrativo.json").write_text(
+                '{"id":"administrativo","nome":"Administrativo","ativo":true,'
+                '"subnichos":[{"id":"fiscal","nome":"Fiscal","ativo":true,'
+                '"palavras_chave":["fiscal"]}]}',
+                encoding="utf-8",
+            )
+            registry = NicheRegistry(niches)
+            item = PublicationInput(
+                titulo="Diário Oficial",
+                conteudo=(
+                    "torna público, aos filiados, que estarão abertas a partir de "
+                    "18.09.2026 as inscrições das chapas concorrentes à eleição da "
+                    "nova diretoria executiva e conselho fiscal do SINPAP/MS para o "
+                    "quadriênio 2026/2030..."
+                ),
+            )
+
+            self.assertEqual(match_subniches(item, registry), ())
+
+    def test_keeps_legitimate_contest_when_electoral_terms_are_nearby(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            niches = Path(temp_dir) / "niches"
+            niches.mkdir()
+            (niches / "administrativo.json").write_text(
+                '{"id":"administrativo","nome":"Administrativo","ativo":true,'
+                '"subnichos":[{"id":"fiscal","nome":"Fiscal","ativo":true,'
+                '"palavras_chave":["fiscal"]}]}',
+                encoding="utf-8",
+            )
+            registry = NicheRegistry(niches)
+            item = PublicationInput(
+                titulo="Concurso público",
+                conteudo=(
+                    "O edital de concurso oferece vagas para Auditor Fiscal. "
+                    "A comissão eleitoral interna acompanhará apenas a escolha "
+                    "de representantes dos servidores."
+                ),
+            )
+
+            self.assertEqual(match_subniches(item, registry), ("fiscal",))
+
 
 if __name__ == "__main__":
     unittest.main()
