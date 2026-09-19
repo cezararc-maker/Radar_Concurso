@@ -11,6 +11,7 @@ from backend.app.services.niche_registry import NicheRegistry
 from backend.app.services.publication_tracker import (
     PublicationInput,
     PublicationTracker,
+    find_subniche_evidence,
     match_subniches,
 )
 
@@ -79,6 +80,12 @@ class TestPublicationTracker(unittest.TestCase):
 
             self.assertEqual(match_subniches(unrelated, registry), ())
             self.assertEqual(match_subniches(relevant, registry), ("auditoria",))
+
+            evidence = find_subniche_evidence(relevant, registry)
+            self.assertEqual(len(evidence), 1)
+            self.assertEqual(evidence[0].subniche_id, "auditoria")
+            self.assertEqual(evidence[0].keyword, "auditor")
+            self.assertIn("edital de concurso", evidence[0].excerpt)
 
 
 if __name__ == "__main__":
