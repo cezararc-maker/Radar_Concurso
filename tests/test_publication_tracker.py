@@ -154,6 +154,32 @@ class TestPublicationTracker(unittest.TestCase):
                     item = PublicationInput(titulo="Diário Oficial", conteudo=excerpt)
                     self.assertEqual(match_subniches(item, registry), ())
 
+
+    def test_rejects_observed_doe_ms_procedural_false_positives(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            niches = Path(temp_dir) / "niches"
+            niches.mkdir()
+            (niches / "administrativo.json").write_text(
+                '{"id":"administrativo","nome":"Administrativo","ativo":true,'
+                '"subnichos":['
+                '{"id":"fiscal","nome":"Fiscal","ativo":true,"palavras_chave":["fiscal"]},'
+                '{"id":"gestao","nome":"Gestão","ativo":true,"palavras_chave":["administração pública"]}'
+                ']}',
+                encoding="utf-8",
+            )
+            registry = NicheRegistry(niches)
+            excerpts = (
+                "supostas nulidades no procedimento licitatório, assim como o poder da autotutela da administração pública, anulo o presente certame",
+                "candidato convocado que exercer cargo, emprego, função pública ou acumular proventos no âmbito da administração pública deverá apresentar comprovante",
+                "resultado da análise dos documentos de habilitação e de regularidade fiscal deste processo seletivo cultural",
+                "candidato na sala em que prestará a prova, mediante autorização expressa do respectivo fiscal; aplicação da prova escrita objetiva",
+            )
+
+            for excerpt in excerpts:
+                with self.subTest(excerpt=excerpt):
+                    item = PublicationInput(titulo="Diário Oficial", conteudo=excerpt)
+                    self.assertEqual(match_subniches(item, registry), ())
+
     def test_requires_contest_context_near_niche_keyword(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             niches = Path(temp_dir) / "niches"
