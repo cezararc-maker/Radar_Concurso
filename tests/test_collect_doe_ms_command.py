@@ -6,7 +6,7 @@ from pathlib import Path
 from backend.app.collectors.base import CollectorResult
 from backend.app.collectors.doe_ms_documents import DoeMsDocumentCollectionReport
 from backend.app.services.publication_tracker import PublicationInput
-from backend.commands.collect_doe_ms import execute_collection
+from backend.commands.collect_doe_ms import execute_collection, render_report
 
 
 class FakeControlledCollector:
@@ -35,6 +35,21 @@ class FakeControlledCollector:
 
 
 class TestCollectDoeMsCommand(unittest.TestCase):
+    def test_duplicate_report_does_not_claim_no_subniches(self):
+        collection = FakeControlledCollector().collect_with_report()
+
+        report = render_report(
+            collection,
+            new_count=0,
+            duplicate_count=1,
+            matched_subniche_ids=(),
+        )
+
+        self.assertIn(
+            "Subnichos encontrados: não reavaliado (publicação duplicada)",
+            report,
+        )
+
     def test_saves_readable_report_and_registers_publication(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
