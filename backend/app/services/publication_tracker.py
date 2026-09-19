@@ -19,13 +19,17 @@ CONTEST_CONTEXT_TERMS = (
     "concurso",
     "processo seletivo",
     "selecao publica",
-    "edital",
-    "inscricao",
+    "edital de abertura",
+    "edital de concurso",
+    "inscricao para",
+    "inscricoes",
     "candidato",
     "candidatos",
-    "vaga",
-    "vagas",
-    "prova",
+    "vaga para",
+    "vagas para",
+    "cargo de",
+    "prova objetiva",
+    "prova escrita",
     "certame",
 )
 
@@ -92,7 +96,7 @@ def find_subniche_evidence(
     item: PublicationInput,
     registry: NicheRegistry,
     *,
-    context_window: int = 500,
+    context_window: int = 220,
     excerpt_radius: int = 180,
 ) -> tuple[SubnicheMatchEvidence, ...]:
     """Return the first contest-context occurrence for each matched subniche."""
